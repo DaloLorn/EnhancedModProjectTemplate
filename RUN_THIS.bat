@@ -1,5 +1,9 @@
 @echo off
 
+REM ***********************
+REM *** SOLUTION CONFIG ***
+REM ***********************
+
 REM vstemplate cannot create files near solution file, only inside the project folder.
 REM And X2ModBuildCommon files need to be in the solution folder.
 REM The only solution is to create X2MBC files inside project folder, and then use this batch file to move them to the solution folder.
@@ -32,6 +36,7 @@ replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\X2ModBuildCo
 replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\X2ModBuildCommon\\build_common.ps1"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\build.ps1"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style ".gitignore"
+replace_text.exe $ModSafeName$.x2proj --remove --c-style "ADVANCED_SETUP.bat"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style "RUN_THIS.bat"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style "replace_text.exe"
 
@@ -47,9 +52,102 @@ REM Bandaid fix for path to XCOM2.targets file we ruined by one of the commands 
 
 replace_text.exe $ModSafeName$.x2proj "$(SolutionRoot)" $(SolutionRoot).scripts\\
 
+REM ************************
+REM *** HIGHLANDER SETUP ***
+REM ************************
+
+REM Option 1: From Git (also initializes the Git repo while it's at it!)
+IF %1 == "FromGit" ( 
+    REM Go outside to set up the repo and grab the Highlander.
+    cd ..
+    git init
+    git add **/*
+    git commit -m "EMPT w/ Git: Initial commit"
+    git submodule add 
+
+    REM Now go back here for more convenient access to FART,
+    REM and reconfigure X2MBC to use our Git Highlander.
+    cd $ModSafeName$
+    replace_text.exe --c-style ..\.scripts\build.ps1 "# $builder.IncludeSrc("\""$srcDirectory" "$builder.IncludeSrc"("\""$srcDirectory"
+)
+
+REM Option 2: From local Highlander folder
+ELSE IF %1 == "FromPath" (
+    REM We'll take an extra argument for the path here, so let's shift all the indices up to keep it consistent.
+    SHIFT
+
+    REM Running FART in C-style mode screws with inserting file paths,
+    REM and I don't want to escape an arbitrary string inside a batch script.
+    REM Frankly, I'm tempted to try rewriting the whole thing in PowerShell
+    REM to avoid all this fiddling with FART and batch scripts...
+    replace_text.exe ..\.scripts\build.ps1 "# $builder.IncludeSrc(\"""C:\Users\Iridar\Documents\Firaxis ModBuddy\X2WOTCCommunityHighlander\X2WOTCCommunityHighlander\Src" "$builder.IncludeSrc"(\""%1"
+)
+
+REM Option 3: From local Highlander folder, via the X2EMPT_HIGHLANDER_FOLDER environment variable.
+REM TODO: Maybe add an option to set the variable in ADVANCED_SETUP.bat for ease of access?
+ELSE IF %1 == "FromEnvVar" (
+    replace_text.exe --c-style ..\.scripts\build.ps1 "# $builder.IncludeSrc($env" "$builder.IncludeSrc($env"
+)
+
+REM Option 4 is just skipping the Highlander outright, so no scripting needed.
+REM ADVANCED_SETUP.bat will pass "NoHighlander" because we're working with
+REM positional arguments and need *something*, but we don't actually care what we get here.
+ELSE ()
+
+REM ********************************
+REM *** X2ProjectGenerator SETUP ***
+REM ********************************
+
+REM Option 1: Use X2ProjectGenerator
+IF %2 == "UseX2PG" (
+    replace_text.exe --c-style ..\.scripts\build.ps1 "$useX2PG = $false" "$useX2PG = $true"
+)
+
+REM Option 2 is just skipping X2PG outright, so no scripting needed.
+REM As above, ADVANCED_SETUP.bat will pass "NoX2PG", but we don't actually care what we get.
+ELSE ()
+
+REM *********************
+REM *** COOKING SETUP ***
+REM *********************
+
+REM Option 1: Enable cooking
+IF %3 == "EnableCooking" (
+    replace_text.exe --c-style ..\.scripts\build.ps1 "# $builder.SetContent" "$builder.SetContent"
+)
+
+REM Option 2 is just keeping cooking off, so no scripting needed.
+REM As above, ADVANCED_SETUP.bat will pass "NoCooking", but we don't really care.
+ELSE ()
+
+REM ************************
+REM *** CUSTOM SRC SETUP ***
+REM ************************
+
+IF NOT "%4" == "" (
+    :insertCustomSrc
+        REM As mentioned above, C-style screws with inserting file paths,
+        REM and I don't want to escape an arbitrary string inside a batch script.
+        REM So we'll run in regular mode, printing \\n to represent a linebreak,
+        REM then do a C-style postprocessing pass to turn it into a real linebreak.
+        REM
+        REM We're using \\n instead of \n because \n could legitimately occur
+        REM in the filesystem, but \\n should be illegal. I think.
+        replace_text.exe ..\.scripts\build.ps1 "# PLACEHOLDER_CUSTOMSRC" "$builder.IncludeSrc(\""%%path\"")\\n# PLACEHOLDER_CUSTOMSRC"
+        replace_text.exe --c-style ..\.scripts\build.ps1 \\\\n \n
+
+        REM We want to loop through all remaining arguments until we run out of paths.
+        SHIFT
+    IF NOT "%4" == "" GOTO insertCustomSrc
+)
+
+REM ***************
+REM *** CLEANUP ***
+REM ***************
+
 echo X2ModBuildCommon v1.2.1 successfully installed. > ReadMe.txt
 echo.
-echo Edit .scripts\build.ps1 if you want to enable cooking or build against Highlander. >> ReadMe.txt
+echo Edit .scripts\build.ps1 if you want to enable/disable cooking or building against Highlander. >> ReadMe.txt
 echo. >> ReadMe.txt
 echo Enjoy making your mod, and may the odds be ever in your favor. >> ReadMe.txt
 echo. >> ReadMe.txt
@@ -59,8 +157,17 @@ echo. >> ReadMe.txt
 echo Get news and updates here: >> ReadMe.txt
 echo https://github.com/Iridar/EnhancedModProjectTemplate >> ReadMe.txt
 
+REM Clean up PLACEHOLDER_CUSTOMSRC.
+replace_text.exe --remove --c-style ..\.scripts\build.ps1 "# PLACEHOLDER_CUSTOMSRC: Placeholder used by EMPT setup to automatically add custom source folders.\n"
+
 REM Delete text editor.
 del replace_text.exe
 
+REM Delete advanced setup file.
+del ADVANCED_SETUP.bat
+
 REM Delete this batch file.
-del %0
+REM This used to be `del %0`, but my use of SHIFT means %0
+REM is no longer the path to the current script. Not sure why Iridar did it
+REM that way, anyway...
+del RUN_THIS.bat

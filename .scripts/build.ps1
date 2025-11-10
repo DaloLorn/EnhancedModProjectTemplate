@@ -10,6 +10,22 @@ $common = Join-Path -Path $ScriptDirectory "X2ModBuildCommon\build_common.ps1"
 Write-Host "Sourcing $common"
 . ($common)
 
+# Controls automatic project verification powered by Xymanek's X2ProjectGenerator.
+# In order for this to have any effect, X2ProjectGenerator.exe must be in your PATH.
+# To enable, set this flag to $true. To disable, set it back to $false.
+$useX2PG = $false
+
+if ($useX2PG -and $null -ne (Get-Command "X2ProjectGenerator.exe" -ErrorAction SilentlyContinue)) {
+    Write-Host "Verifying project file..."
+    &"X2ProjectGenerator.exe" "$srcDirectory\YOUR_MOD_NAME_HERE" "--exclude-contents" "--verify-only"
+    if ($LASTEXITCODE -ne 0) {
+        ThrowFailure "Errors in project file."
+    }
+}
+else {
+    Write-Host "Skipping verification of project file."
+}
+
 $builder = [BuildProject]::new("$ModSafeName$", $srcDirectory, $sdkPath, $gamePath)
 
 # Building against Highlander option 1:
@@ -23,8 +39,16 @@ $builder = [BuildProject]::new("$ModSafeName$", $srcDirectory, $sdkPath, $gamePa
 # and uncomment the line:
 # $builder.IncludeSrc("C:\Users\Iridar\Documents\Firaxis ModBuddy\X2WOTCCommunityHighlander\X2WOTCCommunityHighlander\Src")
 
+# Building against Highlander option 3:
+# Create an X2EMPT_HIGHLANDER_FOLDER environment variable (if it does not already exist)
+# containing the path to your local Highlander repository or the Highlander's mod folder,
+# then uncomment the line:
+# $builder.IncludeSrc($env:X2EMPT_HIGHLANDER_FOLDER)
+
 # Uncomment to use additional global Custom Src to build against.
 # $builder.IncludeSrc("C:\Users\Iridar\Documents\Firaxis ModBuddy\CustomSrc")
+
+# PLACEHOLDER_CUSTOMSRC: Used by ADVANCED_SETUP.bat to configure custom source folders.
 
 switch ($config)
 {

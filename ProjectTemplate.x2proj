@@ -31,6 +31,7 @@
 	<Content Include=".scripts\X2ModBuildCommon\XCOM2.targets" />
 	<Content Include=".gitignore" />
 	<Content Include="replace_text.exe" />
+	<Content Include="ADVANCED_SETUP.bat" />
 	<Content Include="RUN_THIS.bat" />
 	<Content Include="ReadMe.txt" />
     <Content Include="ModPreview.jpg"/>
