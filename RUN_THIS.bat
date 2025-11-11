@@ -57,22 +57,21 @@ REM *** HIGHLANDER SETUP ***
 REM ************************
 
 REM Option 1: From Git (also initializes the Git repo while it's at it!)
-IF %1 == "FromGit" ( 
+IF "%1" == "FromGit" ( 
     REM Go outside to set up the repo and grab the Highlander.
     cd ..
     git init
-    git add **/*
-    git commit -m "EMPT w/ Git: Initial commit"
-    git submodule add 
+    git submodule add https://github.com/X2CommunityCore/X2WOTCCommunityHighlander.git
 
     REM Now go back here for more convenient access to FART,
     REM and reconfigure X2MBC to use our Git Highlander.
     cd $ModSafeName$
     replace_text.exe --c-style ..\.scripts\build.ps1 "# $builder.IncludeSrc("\""$srcDirectory" "$builder.IncludeSrc"("\""$srcDirectory"
+    GOTO highlanderFinished
 )
 
 REM Option 2: From local Highlander folder
-ELSE IF %1 == "FromPath" (
+IF "%1" == "FromPath" (
     REM We'll take an extra argument for the path here, so let's shift all the indices up to keep it consistent.
     SHIFT
 
@@ -81,44 +80,44 @@ ELSE IF %1 == "FromPath" (
     REM Frankly, I'm tempted to try rewriting the whole thing in PowerShell
     REM to avoid all this fiddling with FART and batch scripts...
     replace_text.exe ..\.scripts\build.ps1 "# $builder.IncludeSrc(\"""C:\Users\Iridar\Documents\Firaxis ModBuddy\X2WOTCCommunityHighlander\X2WOTCCommunityHighlander\Src" "$builder.IncludeSrc"(\""%1"
+    GOTO highlanderFinished
 )
 
 REM Option 3: From local Highlander folder, via the X2EMPT_HIGHLANDER_FOLDER environment variable.
 REM TODO: Maybe add an option to set the variable in ADVANCED_SETUP.bat for ease of access?
-ELSE IF %1 == "FromEnvVar" (
+IF "%1" == "FromEnvVar" (
     replace_text.exe --c-style ..\.scripts\build.ps1 "# $builder.IncludeSrc($env" "$builder.IncludeSrc($env"
+    GOTO highlanderFinished
 )
 
 REM Option 4 is just skipping the Highlander outright, so no scripting needed.
 REM ADVANCED_SETUP.bat will pass "NoHighlander" because we're working with
 REM positional arguments and need *something*, but we don't actually care what we get here.
-ELSE ()
+:highlanderFinished
 
 REM ********************************
 REM *** X2ProjectGenerator SETUP ***
 REM ********************************
 
 REM Option 1: Use X2ProjectGenerator
-IF %2 == "UseX2PG" (
+IF "%2" == "UseX2PG" (
     replace_text.exe --c-style ..\.scripts\build.ps1 "$useX2PG = $false" "$useX2PG = $true"
 )
 
 REM Option 2 is just skipping X2PG outright, so no scripting needed.
 REM As above, ADVANCED_SETUP.bat will pass "NoX2PG", but we don't actually care what we get.
-ELSE ()
 
 REM *********************
 REM *** COOKING SETUP ***
 REM *********************
 
 REM Option 1: Enable cooking
-IF %3 == "EnableCooking" (
+IF "%3" == "EnableCooking" (
     replace_text.exe --c-style ..\.scripts\build.ps1 "# $builder.SetContent" "$builder.SetContent"
 )
 
 REM Option 2 is just keeping cooking off, so no scripting needed.
 REM As above, ADVANCED_SETUP.bat will pass "NoCooking", but we don't really care.
-ELSE ()
 
 REM ************************
 REM *** CUSTOM SRC SETUP ***
@@ -171,3 +170,8 @@ REM This used to be `del %0`, but my use of SHIFT means %0
 REM is no longer the path to the current script. Not sure why Iridar did it
 REM that way, anyway...
 del RUN_THIS.bat
+
+REM If we're using Git, now is a good time to make an initial commit!
+cd ..
+git add **/*
+git commit -m "EMPT w/ Git: Initial commit"
