@@ -11,11 +11,41 @@ echo.
 SETLOCAL EnableDelayedExpansion
 
 REM Set initial values so we can reliably navigate back from the commit screen.
+SET gitMode=
 SET highlanderMode=
 SET x2PGMode=
 SET cookingMode=
 SET customSrc=
 SET skipCustomSrc=
+
+REM ******************
+REM *** GIT SCREEN ***
+REM ******************
+
+:gitSetup
+echo Do you want to use Git for version control? (You need to have installed it before, or this won't do anything...)
+echo   1. Yes, I want to use Git.
+echo   2. No, I don't want to use Git right now.
+SET /p "gitMode=Please enter the number corresponding to your preferred option: "
+
+IF "!gitMode!" == "1" (
+    SET gitMode=UseGit
+    GOTO gitFinished
+) 
+IF "!gitMode!" == "2" (
+    SET gitMode=NoGit
+    GOTO gitFinished
+)
+echo Sorry, that's not a valid option^^!
+echo.
+SET gitMode=
+GOTO gitSetup
+
+:gitFinished
+echo.
+echo Git mode has been set to "!gitMode!"^^! (1/5)
+echo Moving on to the meaty bits...
+echo.
 
 REM *************************
 REM *** HIGHLANDER SCREEN ***
@@ -23,13 +53,14 @@ REM *************************
 
 :highlanderSetup
 echo How do you want to build against the Community Highlander?
-echo   1. Get the Highlander from GitHub.
+echo   1. Get the Highlander from GitHub. (This will forcibly enable Git mode^^!)
 echo   2. Use a local copy of the Highlander from a project-specific path...
 echo   3. Use a local copy of the Highlander from a global path...
 echo   4. I don't want to build against the Highlander right now.
 SET /p "highlanderMode=Please enter the number corresponding to your preferred option: "
 
 IF "!highlanderMode!" == "1" (
+    SET gitMode=UseGit
     SET highlanderMode=FromGit
     GOTO highlanderFinished
 ) 
@@ -89,7 +120,7 @@ GOTO highlanderSetup
 
 :highlanderFinished
 echo.
-echo Highlander mode has been set to "!highlanderMode!"^^! (1/4)
+echo Highlander mode has been set to "!highlanderMode!"^^! (2/5)
 echo Moving on...
 echo.
 
@@ -154,7 +185,7 @@ GOTO cookingSetup
 
 :cookingFinished
 echo.
-echo Cooking mode has been set to "!cookingMode!"^^! (3/4)
+echo Cooking mode has been set to "!cookingMode!"^^! (4/5)
 echo Almost there...
 echo.
 
@@ -188,7 +219,7 @@ IF NOT "!moreSrc!" == "N" (
 
 SET skipCustomSrc=TRUE
 echo.
-echo Finished registering dependencies^^! (4/4)
+echo Finished registering dependencies^^! (5/5)
 echo Setup is ready to do its thing^^!
 echo.
 
@@ -199,39 +230,51 @@ REM *********************
 :commitScreen
 SET commit=
 echo Here's the final config, for verification:
-echo 1. Highlander source: !highlanderMode!
-echo 2. Automatic validation: !x2PGMode!
-echo 3. Is using cooking: !cookingMode!
-echo 4. Dependency paths: !customSrc!
+echo 1. Is using Git: !gitMode!
+echo 2. Highlander source: !highlanderMode!
+echo 3. Automatic validation: !x2PGMode!
+echo 4. Is using cooking: !cookingMode!
+echo 5. Dependency paths: !customSrc!
 echo.
-SET /p "commit=Does that look okay? Enter a number 1-4 to return to its corresponding step, or 5 to finish setup: "
+SET /p "commit=Does that look okay? Enter a number 1-5 to return to its corresponding step, or 6 to finish setup: "
 
 IF "!commit!" == "1" (
+    IF "!highlanderMode!" == "FromGit" (
+        echo Sorry, can't disable Git if you're using it to build against the Highlander^^!
+        echo.
+        GOTO commitScreen
+    )
+    echo Returning to Git config now^^!
+    echo.
+    SET gitMode=
+    GOTO gitSetup
+)
+IF "!commit!" == "2" (
     echo Okay, returning to Highlander config^^!
     echo.
     SET highlanderMode=
     GOTO highlanderSetup
 ) 
-IF "!commit!" == "2" (
+IF "!commit!" == "3" (
     echo Got it, returning to X2PG config^^!
     echo.
     SET x2PGMode=
     GOTO x2PGSetup
 ) 
-IF "!commit!" == "3" (
+IF "!commit!" == "4" (
     echo Going back to cooking config now^^!
     echo.
     SET cookingMode=
     GOTO cookingSetup
 ) 
-IF "!commit!" == "4" (
+IF "!commit!" == "5" (
     echo Ouch. Going back to dependency config... hopefully not for long...
     echo.
     SET skipCustomSrc=
     SET customSrc=
     GOTO customSrcSetup
 ) 
-IF "!commit!" == "5" (
+IF "!commit!" == "6" (
     GOTO runSetup
 )
 echo Sorry, that's not a valid option^^!
@@ -241,6 +284,11 @@ GOTO commitScreen
 :runSetup
 echo Beginning project setup^^! Do not close this window...
 echo.
+IF "!gitMode!" == "UseGit" (
+    cd ..
+    git init
+    cd $ModSafeName$
+)
 RUN_THIS.bat !highlanderMode! !x2PGMode! !cookingMode! !customSrc!
 
 echo Setup complete^^!

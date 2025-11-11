@@ -56,11 +56,10 @@ REM ************************
 REM *** HIGHLANDER SETUP ***
 REM ************************
 
-REM Option 1: From Git (also initializes the Git repo while it's at it!)
+REM Option 1: From Git
 IF "%1" == "FromGit" ( 
-    REM Go outside to set up the repo and grab the Highlander.
+    REM Go outside to grab the Highlander (we're presuming the repo already exists).
     cd ..
-    git init
     git submodule add https://github.com/X2CommunityCore/X2WOTCCommunityHighlander.git
 
     REM Now go back here for more convenient access to FART,
