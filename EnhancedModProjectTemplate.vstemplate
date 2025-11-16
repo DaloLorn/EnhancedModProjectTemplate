@@ -27,6 +27,7 @@
 		
 		<ProjectItem>.gitignore</ProjectItem>
 		<ProjectItem ReplaceParameters="true">RUN_THIS.bat</ProjectItem>
+		<ProjectItem ReplaceParameters="true">ADVANCED_SETUP.bat</ProjectItem>
 		<ProjectItem>replace_text.exe</ProjectItem>
 		
 		<ProjectItem ReplaceParameters="true">Config\Base\XComEditor.ini</ProjectItem>
