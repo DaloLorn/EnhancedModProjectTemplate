@@ -289,7 +289,9 @@ IF "!gitMode!" == "UseGit" (
     git init
     cd $ModSafeName$
 )
-RUN_THIS.bat !highlanderMode! !x2PGMode! !cookingMode! !customSrc!
 
-echo Setup complete^^!
-pause
+REM RUN_THIS expects delayed expansion to be off.
+REM I chose not to bother changing that, but
+REM the setting will be inherited from the previous script.
+SETLOCAL DisableDelayedExpansion
+RUN_THIS.bat !highlanderMode! !x2PGMode! !cookingMode! !customSrc!

@@ -164,13 +164,16 @@ del replace_text.exe
 REM Delete advanced setup file.
 del ADVANCED_SETUP.bat
 
-REM Delete this batch file.
-REM This used to be `del %0`, but my use of SHIFT means %0
-REM is no longer the path to the current script. Not sure why Iridar did it
-REM that way, anyway...
-del RUN_THIS.bat
-
 REM If we're using Git, now is a good time to make an initial commit!
 cd ..
-git add **/*
+git add **/* :!$ModSafeName$\RUN_THIS.bat
 git commit -m "EMPT w/ Git: Initial commit"
+cd $ModSafeName$
+
+REM Delete this batch file.
+REM This is a bit fancier than Iridar's original,
+REM because:
+REM - My use of SHIFT means %0 is no longer the path to the current script.
+REM - The original threw an error and I didn't like that.
+REM Source/explanation: https://stackoverflow.com/a/20333152
+(GOTO) 2>NUL & del RUN_THIS.bat && echo Setup complete! && pause
