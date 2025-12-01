@@ -36,8 +36,8 @@ replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\X2ModBuildCo
 replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\X2ModBuildCommon\\build_common.ps1"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\build.ps1"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style ".gitignore"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style "ADVANCED_SETUP.bat"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style "RUN_THIS.bat"
+replace_text.exe $ModSafeName$.x2proj --remove --c-style "SETUP_ADVANCED.bat"
+replace_text.exe $ModSafeName$.x2proj --remove --c-style "SETUP.bat"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style "build.bat"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style "build_debug.bat"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style "build_default.bat"
@@ -87,14 +87,14 @@ IF "%1" == "FromPath" (
 )
 
 REM Option 3: From local Highlander folder, via the X2EMPT_HIGHLANDER_FOLDER environment variable.
-REM TODO: Maybe add an option to set the variable in ADVANCED_SETUP.bat for ease of access?
+REM TODO: Maybe add an option to set the variable in SETUP_ADVANCED.bat for ease of access?
 IF "%1" == "FromEnvVar" (
     replace_text.exe --c-style ..\.scripts\build.ps1 "# $builder.IncludeSrc($env" "$builder.IncludeSrc($env"
     GOTO highlanderFinished
 )
 
 REM Option 4 is just skipping the Highlander outright, so no scripting needed.
-REM ADVANCED_SETUP.bat will pass "NoHighlander" because we're working with
+REM SETUP_ADVANCED.bat will pass "NoHighlander" because we're working with
 REM positional arguments and need *something*, but we don't actually care what we get here.
 :highlanderFinished
 
@@ -108,7 +108,7 @@ IF "%2" == "UseX2PG" (
 )
 
 REM Option 2 is just skipping X2PG outright, so no scripting needed.
-REM As above, ADVANCED_SETUP.bat will pass "NoX2PG", but we don't actually care what we get.
+REM As above, SETUP_ADVANCED.bat will pass "NoX2PG", but we don't actually care what we get.
 
 REM *********************
 REM *** COOKING SETUP ***
@@ -120,7 +120,7 @@ IF "%3" == "EnableCooking" (
 )
 
 REM Option 2 is just keeping cooking off, so no scripting needed.
-REM As above, ADVANCED_SETUP.bat will pass "NoCooking", but we don't really care.
+REM As above, SETUP_ADVANCED.bat will pass "NoCooking", but we don't really care.
 
 REM ************************
 REM *** CUSTOM SRC SETUP ***
@@ -166,11 +166,11 @@ REM Delete text editor.
 del replace_text.exe
 
 REM Delete advanced setup file.
-del ADVANCED_SETUP.bat
+del SETUP_ADVANCED.bat
 
 REM If we're using Git, now is a good time to make an initial commit!
 cd ..
-git add **/* :!$ModSafeName$\RUN_THIS.bat
+git add **/* :!$ModSafeName$\SETUP.bat
 git commit -m "EMPT w/ Git: Initial commit"
 cd $ModSafeName$
 
@@ -180,4 +180,4 @@ REM because:
 REM - My use of SHIFT means %0 is no longer the path to the current script.
 REM - The original threw an error and I didn't like that.
 REM Source/explanation: https://stackoverflow.com/a/20333152
-(GOTO) 2>NUL & del RUN_THIS.bat && echo Setup complete! && pause
+(GOTO) 2>NUL & del SETUP.bat && echo Setup complete! && pause

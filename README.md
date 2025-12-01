@@ -32,7 +32,7 @@ Follow these instructions if you have already installed and used EMPT. ModBuddy 
 
 **Note:** when creating mod projects using this project template, it is **extremely important** that Project Name, Solution name, and Title match **exactly**. Otherwise, there will be issues during first-time setup, and the mod project will be broken.
 
-2) Perform once-per-project setup by running the "RUN_THIS.bat" batch file inside the created mod project directory. The file will automatically delete itself afterwards. If you wish to build against the Community Highlander; validate the project with Xymanek's X2ProjectGenerator; enable cooking; or build against another mod, you can use "ADVANCED_SETUP.bat", instead. It will help you configure any of these features.
+2) Perform once-per-project setup by running the "SETUP.bat" batch file inside the created mod project directory. The file will automatically delete itself afterwards. If you wish to build against the Community Highlander; validate the project with Xymanek's X2ProjectGenerator; enable cooking; or build against another mod, you can use "SETUP_ADVANCED.bat", instead. It will help you configure any of these features.
 
 3) Enjoy. If your mod project doesn't require some of the files and folders created by EMPT, feel free to delete them.
 
@@ -48,7 +48,7 @@ The localization files shipped with the mod project use UTF-8 encoding, so chang
 
 ### Cooking
 
-To enable cooking with X2MBC (if you have not already used `ADVANCED_SETUP.bat` to do so), open the `.scripts\build.ps1` file and uncomment the `$builder.SetContentOptionsJsonFilename("ContentOptions.json")` line by removing the `#` at the start.
+To enable cooking with X2MBC (if you have not already used `SETUP_ADVANCED.bat` to do so), open the `.scripts\build.ps1` file and uncomment the `$builder.SetContentOptionsJsonFilename("ContentOptions.json")` line by removing the `#` at the start.
 
 You can find some basic instructions for [cooking here](https://www.reddit.com/r/xcom2mods/wiki/index/cooking_for_dummies).
 

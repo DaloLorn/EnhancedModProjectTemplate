@@ -290,8 +290,8 @@ IF "!gitMode!" == "UseGit" (
     cd $ModSafeName$
 )
 
-REM RUN_THIS expects delayed expansion to be off.
+REM SETUP expects delayed expansion to be off.
 REM I chose not to bother changing that, but
 REM the setting will be inherited from the previous script.
 SETLOCAL DisableDelayedExpansion
-RUN_THIS.bat !highlanderMode! !x2PGMode! !cookingMode! !customSrc!
+SETUP.bat !highlanderMode! !x2PGMode! !cookingMode! !customSrc!

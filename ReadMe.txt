@@ -2,7 +2,7 @@
 
 You must perform once-per-mod setup before you can begin working on your mod.
 
-To do so, run "RUN_THIS.bat" in the mod project folder.
+To do so, run either "SETUP.bat" or "SETUP_ADVANCED.bat" in the mod project folder. "SETUP_ADVANCED.bat" has the added advantage of guiding you through a few common configuration steps, but these may not be relevant to your mod.
 
 If you did not close Modbuddy, you will get a popup message about files being modified outside the source editor. Click "Yes to All".
 
