@@ -37,6 +37,7 @@
 	<Content Include="build_debug.bat" />
 	<Content Include="build_default.bat" />
 	<Content Include="clean.bat" />
+	<Content Include="vscode.code-workspace.default" />
 	<Content Include="ReadMe.txt" />
     <Content Include="ModPreview.jpg"/>
 	<Content Include="ContentOptions.json"/>

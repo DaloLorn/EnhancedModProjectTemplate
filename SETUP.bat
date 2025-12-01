@@ -43,6 +43,7 @@ replace_text.exe $ModSafeName$.x2proj --remove --c-style "build_debug.bat"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style "build_default.bat"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style "clean.bat"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style "replace_text.exe"
+replace_text.exe $ModSafeName$.x2proj --remove --c-style "vscode.code-workspace.default"
 
 REM " and \ are tough to handle, so it needs to be done in two steps.
 
@@ -70,6 +71,9 @@ IF "%1" == "FromGit" (
     REM and reconfigure X2MBC to use our Git Highlander.
     cd $ModSafeName$
     replace_text.exe --c-style ..\.scripts\build.ps1 "# $builder.IncludeSrc("\""$srcDirectory" "$builder.IncludeSrc"("\""$srcDirectory"
+
+    REM Also configure the VSCode workspace!
+    replace_text.exe --c-style vscode.code-workspace.default "$HIGHLANDER" "{\""path\"": \"../X2WOTCCommunityHighlander/X2WOTCCommunityHighlander/Src\"}"
     GOTO highlanderFinished
 )
 
@@ -83,6 +87,9 @@ IF "%1" == "FromPath" (
     REM Frankly, I'm tempted to try rewriting the whole thing in PowerShell
     REM to avoid all this fiddling with FART and batch scripts...
     replace_text.exe ..\.scripts\build.ps1 "# $builder.IncludeSrc(\"""C:\Users\Iridar\Documents\Firaxis ModBuddy\X2WOTCCommunityHighlander\X2WOTCCommunityHighlander\Src" "$builder.IncludeSrc"(\""%1"
+
+    REM Also configure the VSCode workspace!
+    replace_text.exe vscode.code-workspace.default "$HIGHLANDER" "{\""path\"": \"%1\"}"
     GOTO highlanderFinished
 )
 
@@ -90,12 +97,16 @@ REM Option 3: From local Highlander folder, via the X2EMPT_HIGHLANDER_FOLDER env
 REM TODO: Maybe add an option to set the variable in SETUP_ADVANCED.bat for ease of access?
 IF "%1" == "FromEnvVar" (
     replace_text.exe --c-style ..\.scripts\build.ps1 "# $builder.IncludeSrc($env" "$builder.IncludeSrc($env"
+    replace_text.exe --c-style vscode.code-workspace.default "$HIGHLANDER" "{\""path\"": \"${env:X2EMPT_HIGHLANDER_FOLDER}\"}"
     GOTO highlanderFinished
 )
 
-REM Option 4 is just skipping the Highlander outright, so no scripting needed.
+REM Option 4 is just skipping the Highlander outright, so we only need to clean up the VSCode workspace.
 REM SETUP_ADVANCED.bat will pass "NoHighlander" because we're working with
 REM positional arguments and need *something*, but we don't actually care what we get here.
+replace_text.exe vscode.code-workspace.default --remove --c-style "$HIGHLANDER,\r\n\t\t"
+REM In case it's using LF line endings!
+replace_text.exe vscode.code-workspace.default --remove --c-style "$HIGHLANDER,\n\t\t"
 :highlanderFinished
 
 REM ********************************
@@ -138,6 +149,9 @@ IF NOT "%4" == "" (
         replace_text.exe ..\.scripts\build.ps1 "# PLACEHOLDER_CUSTOMSRC" "$builder.IncludeSrc(\""%%path\"")\\n# PLACEHOLDER_CUSTOMSRC"
         replace_text.exe --c-style ..\.scripts\build.ps1 \\\\n \n
 
+        replace_text.exe vscode.code-workspace.default "$DEPENDENCY" "{\""path\"": \"%1\"},\\n$DEPENDENCY"
+        replace_text.exe --c-style vscode.code-workspace.default \\\\n$DEPENDENCY \n\t\t$DEPENDENCY
+
         REM We want to loop through all remaining arguments until we run out of paths.
         SHIFT
     IF NOT "%4" == "" GOTO insertCustomSrc
@@ -161,6 +175,12 @@ echo https://github.com/Iridar/EnhancedModProjectTemplate >> ReadMe.txt
 
 REM Clean up PLACEHOLDER_CUSTOMSRC.
 replace_text.exe --remove --c-style ..\.scripts\build.ps1 "# PLACEHOLDER_CUSTOMSRC: Placeholder used by EMPT setup to automatically add custom source folders.\n"
+
+REM Clean up and finalize VSCode workspace.
+replace_text.exe vscode.code-workspace.default --remove --c-style "$DEPENDENCY,\r\n\t\t"
+REM In case it's using LF line endings!
+replace_text.exe vscode.code-workspace.default --remove --c-style "$DEPENDENCY,\n\t\t"
+move vscode.code-workspace.default $ModSafeName$.code-workspace
 
 REM Delete text editor.
 del replace_text.exe

@@ -33,6 +33,7 @@
 		<ProjectItem>build_debug.bat</ProjectItem>
 		<ProjectItem>build_default.bat</ProjectItem>
 		<ProjectItem>replace_text.exe</ProjectItem>
+		<ProjectItem>vscode.code-workspace.default</ProjectItem>
 		
 		<ProjectItem ReplaceParameters="true">Config\Base\XComEditor.ini</ProjectItem>
 		<ProjectItem ReplaceParameters="true">Config\Base\XComEngine.ini</ProjectItem>

@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		$HIGHLANDER,
+		$DEPENDENCY,
+		{
+			"path": "${env:XCOM2SDKPATH}/Development/SrcOrig"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.int":"ini"
+		}
+	}
+}
