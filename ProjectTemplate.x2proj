@@ -33,6 +33,10 @@
 	<Content Include="replace_text.exe" />
 	<Content Include="ADVANCED_SETUP.bat" />
 	<Content Include="RUN_THIS.bat" />
+	<Content Include="build.bat" />
+	<Content Include="build_debug.bat" />
+	<Content Include="build_default.bat" />
+	<Content Include="clean.bat" />
 	<Content Include="ReadMe.txt" />
     <Content Include="ModPreview.jpg"/>
 	<Content Include="ContentOptions.json"/>

@@ -38,6 +38,10 @@ replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\build.ps1"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style ".gitignore"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style "ADVANCED_SETUP.bat"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style "RUN_THIS.bat"
+replace_text.exe $ModSafeName$.x2proj --remove --c-style "build.bat"
+replace_text.exe $ModSafeName$.x2proj --remove --c-style "build_debug.bat"
+replace_text.exe $ModSafeName$.x2proj --remove --c-style "build_default.bat"
+replace_text.exe $ModSafeName$.x2proj --remove --c-style "clean.bat"
 replace_text.exe $ModSafeName$.x2proj --remove --c-style "replace_text.exe"
 
 REM " and \ are tough to handle, so it needs to be done in two steps.
