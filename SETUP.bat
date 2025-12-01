@@ -176,11 +176,17 @@ echo https://github.com/Iridar/EnhancedModProjectTemplate >> ReadMe.txt
 REM Clean up PLACEHOLDER_CUSTOMSRC.
 replace_text.exe --remove --c-style ..\.scripts\build.ps1 "# PLACEHOLDER_CUSTOMSRC: Placeholder used by EMPT setup to automatically add custom source folders.\n"
 
-REM Clean up and finalize VSCode workspace.
+REM Clean up VSCode workspace.
 replace_text.exe vscode.code-workspace.default --remove --c-style "$DEPENDENCY,\r\n\t\t"
 REM In case it's using LF line endings!
 replace_text.exe vscode.code-workspace.default --remove --c-style "$DEPENDENCY,\n\t\t"
-move vscode.code-workspace.default $ModSafeName$.code-workspace
+
+REM Move VSCode workspace and the helper scripts where they belong.
+move vscode.code-workspace.default ../$ModSafeName$.code-workspace
+move build_default.bat ../build_default.bat
+move build_debug.bat ../build_debug.bat
+move build.bat ../build.bat
+move clean.bat ../clean.bat
 
 REM Delete text editor.
 del replace_text.exe
