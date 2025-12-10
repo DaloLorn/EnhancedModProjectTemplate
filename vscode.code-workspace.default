@@ -6,7 +6,7 @@
 		$HIGHLANDER,
 		$DEPENDENCY,
 		{
-			"path": "${env:XCOM2SDKPATH}/Development/SrcOrig"
+			"path": "$XCOM2SDKPATH$/Development/SrcOrig"
 		}
 	],
 	"settings": {

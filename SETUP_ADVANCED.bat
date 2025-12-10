@@ -19,6 +19,74 @@ SET customSrc=
 SET skipCustomSrc=
 
 REM ******************
+REM *** SDK SCREEN ***
+REM ******************
+
+REM We may need to set up the SDK and game locations
+REM for the build automation to work.
+IF NOT EXIST "!XCOM2SDKPATH!\Development\SrcOrig" (
+    echo WARNING: Could not detect XCOM 2 WotC SDK^^!
+    echo A valid SDK path is required to run the build automation scripts,
+    echo and to correctly configure the VSCode workspace for IntelliSense.
+    echo It is highly recommended that you set the XCOM2SDKPATH environment variable
+    echo to a valid location before proceeding. This setup can set it for you, if you wish.
+    echo.
+
+    :offerSdkSetup
+    SET setupSdk=
+    SET sdkPath=
+    SET /p "setupSdk=Do you wish to set up XCOM2SDKPATH? (Y/N) "
+    IF "!setupSdk!" == "Y" (
+        :sdkSetup
+        SET /p "sdkPath=Please specify the path to the XCOM 2 WotC SDK folder (typically '^<path to Steam^>\steamapps\common\XCOM 2 War of the Chosen SDK'): "
+
+        IF NOT EXIST "!XCOM2SDKPATH!\Development\SrcOrig" (
+            echo ERROR: Could not detect XCOM 2 WotC SDK^^! Please double-check the path and try again^^!
+            GOTO sdkSetup
+        )
+        SETX XCOM2SDKPATH "!sdkPath!"
+        GOTO findGame
+    )
+    IF NOT "!setupSdk!" == "N" (
+        echo Sorry, that's not a valid option^^!
+        echo.
+        GOTO offerSdkSetup
+    )
+)
+
+:findGame
+IF NOT EXIST "!XCOM2GAMEPATH!\Binaries\Win64\XCom2.exe" (
+    echo WARNING: Could not detect XCOM 2: War of the Chosen^^!
+    echo A valid WotC path is required to run the build automation scripts.
+    echo It is highly recommended that you set the XCOM2GAMEPATH environment variable
+    echo to a valid location before proceeding. This setup can set it for you, if you wish.
+    echo.
+
+    :offerGameSetup
+    SET setupGame=
+    SET gamePath=
+    SET /p "setupGame=Do you wish to set up XCOM2GAMEPATH? (Y/N) "
+    IF "!setupGame!" == "Y" (
+        :gameSetup
+        SET /p "gamePath=Please specify the path to the XCOM 2: War of the Chosen folder (typically '^<path to Steam^>\steamapps\common\XCOM 2\XCom2-WarOfTheChosen'): "
+
+        IF NOT EXIST "!XCOM2GAMEPATH!\Binaries\Win64\XCom2.exe" (
+            echo ERROR: Could not detect XCOM 2: War of the Chosen^^! Please double-check the path and try again^^!
+            GOTO gameSetup
+        )
+        SETX XCOM2GAMEPATH "!gamePath!"
+        GOTO gitSetup
+    )
+    IF NOT "!setupGame!" == "N" (
+        echo Sorry, that's not a valid option^^!
+        echo.
+        GOTO offerGameSetup
+    )
+)
+
+
+
+REM ******************
 REM *** GIT SCREEN ***
 REM ******************
 
@@ -290,8 +358,4 @@ IF "!gitMode!" == "UseGit" (
     cd $ModSafeName$
 )
 
-REM SETUP expects delayed expansion to be off.
-REM I chose not to bother changing that, but
-REM the setting will be inherited from the previous script.
-SETLOCAL DisableDelayedExpansion
 SETUP.bat !highlanderMode! !x2PGMode! !cookingMode! !customSrc!

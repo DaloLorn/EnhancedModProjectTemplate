@@ -1,4 +1,8 @@
 @echo off
+REM SETUP_ADVANCED uses delayed expansion while SETUP
+REM expects it to be disabled. I chose not to bother changing that, but
+REM need to clean up after the previous script.
+SETLOCAL DisableDelayedExpansion
 
 REM ***********************
 REM *** SOLUTION CONFIG ***
@@ -94,19 +98,18 @@ IF "%1" == "FromPath" (
 )
 
 REM Option 3: From local Highlander folder, via the X2EMPT_HIGHLANDER_FOLDER environment variable.
-REM TODO: Maybe add an option to set the variable in SETUP_ADVANCED.bat for ease of access?
 IF "%1" == "FromEnvVar" (
     replace_text.exe --c-style ..\.scripts\build.ps1 "# $builder.IncludeSrc($env" "$builder.IncludeSrc($env"
-    replace_text.exe --c-style vscode.code-workspace.default "$HIGHLANDER" "{\""path\"": \"${env:X2EMPT_HIGHLANDER_FOLDER}\"}"
+    replace_text.exe --c-style vscode.code-workspace.default "$HIGHLANDER" "{\""path\"": \"%X2EMPT_HIGHLANDER_FOLDER%\"}"
     GOTO highlanderFinished
 )
 
 REM Option 4 is just skipping the Highlander outright, so we only need to clean up the VSCode workspace.
 REM SETUP_ADVANCED.bat will pass "NoHighlander" because we're working with
 REM positional arguments and need *something*, but we don't actually care what we get here.
-replace_text.exe vscode.code-workspace.default --remove --c-style "$HIGHLANDER,\r\n\t\t"
+replace_text.exe vscode.code-workspace.default --remove --c-style "$HIGHLANDER,\r\n"
 REM In case it's using LF line endings!
-replace_text.exe vscode.code-workspace.default --remove --c-style "$HIGHLANDER,\n\t\t"
+replace_text.exe vscode.code-workspace.default --remove --c-style "$HIGHLANDER,\n"
 :highlanderFinished
 
 REM ********************************
@@ -176,10 +179,16 @@ echo https://github.com/Iridar/EnhancedModProjectTemplate >> ReadMe.txt
 REM Clean up PLACEHOLDER_CUSTOMSRC.
 replace_text.exe --remove --c-style ..\.scripts\build.ps1 "# PLACEHOLDER_CUSTOMSRC: Placeholder used by EMPT setup to automatically add custom source folders.\n"
 
-REM Clean up VSCode workspace.
-replace_text.exe vscode.code-workspace.default --remove --c-style "$DEPENDENCY,\r\n\t\t"
+REM Finalize VSCode workspace.
+replace_text.exe vscode.code-workspace.default --remove --c-style "$DEPENDENCY,\r\n"
 REM In case it's using LF line endings!
-replace_text.exe vscode.code-workspace.default --remove --c-style "$DEPENDENCY,\n\t\t"
+replace_text.exe vscode.code-workspace.default --remove --c-style "$DEPENDENCY,\n"
+REM ... It's a line-by-line search, so the extra tabs need extra cleanup.
+replace_text.exe vscode.code-workspace.default --c-style "\t\t\t\t" "\t\t"
+REM So it turns out workspaces can't reference environment variables.
+REM Good thing we're already using FART, I guess...
+replace_text.exe vscode.code-workspace.default "$XCOM2SDKPATH$" "%XCOM2SDKPATH%"
+replace_text.exe vscode.code-workspace.default --c-style "\\" "/"
 
 REM Move VSCode workspace and the helper scripts where they belong.
 move vscode.code-workspace.default ../$ModSafeName$.code-workspace

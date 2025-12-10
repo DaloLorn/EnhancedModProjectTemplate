@@ -1,6 +1,6 @@
 @echo off
 
-if "%XCOM2SDKPATH%" == "" (
+IF NOT EXIST "%XCOM2SDKPATH%\Development\SrcOrig" (
     echo You need to specify the location of the XCOM 2 WOTC SDK (typically ^<path to Steam^>\steamapps\common\XCOM 2 War of the Chosen SDK^) in the XCOM2SDKPATH environment variable
     exit /b 1
 )
