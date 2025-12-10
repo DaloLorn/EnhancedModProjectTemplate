@@ -187,7 +187,13 @@ REM ... It's a line-by-line search, so the extra tabs need extra cleanup.
 replace_text.exe vscode.code-workspace.default --c-style "\t\t\t\t" "\t\t"
 REM So it turns out workspaces can't reference environment variables.
 REM Good thing we're already using FART, I guess...
-replace_text.exe vscode.code-workspace.default "$XCOM2SDKPATH$" "%XCOM2SDKPATH%"
+IF EXIST "%XCOM2SDKPATH%\Development\SrcOrig" (
+    REM Leave the placeholder as-is if the user's SDK is broken.
+    REM It'll make it easier for them to fix later.
+    replace_text.exe vscode.code-workspace.default "$XCOM2SDKPATH$" "%XCOM2SDKPATH%"
+)
+REM The workspace is in JSON, so backslashes need to be escaped.
+REM Forward slashes are a far superior path separator.
 replace_text.exe vscode.code-workspace.default --c-style "\\" "/"
 
 REM Move VSCode workspace and the helper scripts where they belong.
