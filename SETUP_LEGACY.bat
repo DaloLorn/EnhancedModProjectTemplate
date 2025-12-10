@@ -194,7 +194,7 @@ IF EXIST "%XCOM2SDKPATH%\Development\SrcOrig" (
 )
 REM The workspace is in JSON, so backslashes need to be escaped.
 REM Forward slashes are a far superior path separator.
-replace_text.exe vscode.code-workspace.default --c-style "\\" "/"
+replace_text.exe vscode.code-workspace.default --c-style \\ /
 
 REM Move VSCode workspace and the helper scripts where they belong.
 move vscode.code-workspace.default ../$ModSafeName$.code-workspace
