@@ -26,8 +26,8 @@
 		<ProjectItem>.scripts\X2ModBuildCommon\XCOM2.targets</ProjectItem>
 		
 		<ProjectItem>.gitignore</ProjectItem>
+		<ProjectItem ReplaceParameters="true">SETUP_LEGACY.bat</ProjectItem>
 		<ProjectItem ReplaceParameters="true">SETUP.bat</ProjectItem>
-		<ProjectItem ReplaceParameters="true">SETUP_ADVANCED.bat</ProjectItem>
 		<ProjectItem ReplaceParameters="true">build.bat</ProjectItem>
 		<ProjectItem ReplaceParameters="true">clean.bat</ProjectItem>
 		<ProjectItem>build_debug.bat</ProjectItem>

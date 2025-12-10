@@ -31,8 +31,8 @@
 	<Content Include=".scripts\X2ModBuildCommon\XCOM2.targets" />
 	<Content Include=".gitignore" />
 	<Content Include="replace_text.exe" />
-	<Content Include="SETUP_ADVANCED.bat" />
 	<Content Include="SETUP.bat" />
+	<Content Include="SETUP_LEGACY.bat" />
 	<Content Include="build.bat" />
 	<Content Include="build_debug.bat" />
 	<Content Include="build_default.bat" />

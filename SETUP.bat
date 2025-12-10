@@ -1,218 +1,361 @@
 @echo off
-REM SETUP_ADVANCED uses delayed expansion while SETUP
-REM expects it to be disabled. I chose not to bother changing that, but
-REM need to clean up after the previous script.
-SETLOCAL DisableDelayedExpansion
 
-REM ***********************
-REM *** SOLUTION CONFIG ***
-REM ***********************
+REM **********************
+REM *** WELCOME SCREEN ***
+REM **********************
 
-REM vstemplate cannot create files near solution file, only inside the project folder.
-REM And X2ModBuildCommon files need to be in the solution folder.
-REM The only solution is to create X2MBC files inside project folder, and then use this batch file to move them to the solution folder.
-
-move ".gitignore" "..\.gitignore"
-move ".scripts" "..\.scripts"
-
-REM vstemplate cannot create empty folders, so we do it here.
-
-mkdir "Content"
-mkdir "ContentForCook"
-
-REM Use the shipped text editor.
-REM vstemplate requires the XCOM2.targets to be present and readable, and the XCOM2.targets is located in the X2MBC folder we have moved,
-REM so we adjust the .x2proj file to point to the new location of the .targets file.
-
-replace_text.exe $ModSafeName$.x2proj "<SolutionRoot>$(MSBuildProjectDirectory)\</SolutionRoot>" "<SolutionRoot>$(MSBuildProjectDirectory)\..\</SolutionRoot>"
-
-REM All files created by vstemplate need to be referenced in .x2proj file during project creation,
-REM but X2MBC and some of the others don't need to be there, so clean them out.
-
-replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\X2ModBuildCommon\\XCOM2.targets"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\X2ModBuildCommon\\README.md"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\X2ModBuildCommon\\LICENSE"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\X2ModBuildCommon\\InvokePowershellTask.cs"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\X2ModBuildCommon\\EmptyUMap"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\X2ModBuildCommon\\clean_cooker_output.ps1"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\X2ModBuildCommon\\clean.ps1"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\X2ModBuildCommon\\CHANGELOG.md"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\X2ModBuildCommon\\build_common.ps1"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style ".scripts\\build.ps1"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style ".gitignore"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style "SETUP_ADVANCED.bat"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style "SETUP.bat"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style "build.bat"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style "build_debug.bat"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style "build_default.bat"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style "clean.bat"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style "replace_text.exe"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style "vscode.code-workspace.default"
-
-REM " and \ are tough to handle, so it needs to be done in two steps.
-
-replace_text.exe $ModSafeName$.x2proj --remove --c-style .scripts\\X2ModBuildCommon\\
-replace_text.exe $ModSafeName$.x2proj --remove --c-style .scripts\\
-
-replace_text.exe $ModSafeName$.x2proj --remove --c-style "<Folder Include=\"\" />"
-replace_text.exe $ModSafeName$.x2proj --remove --c-style "<Content Include=\"\" />"
-
-REM Bandaid fix for path to XCOM2.targets file we ruined by one of the commands above.
-
-replace_text.exe $ModSafeName$.x2proj "$(SolutionRoot)" $(SolutionRoot).scripts\\
-
-REM ************************
-REM *** HIGHLANDER SETUP ***
-REM ************************
-
-REM Option 1: From Git
-IF "%1" == "FromGit" ( 
-    REM Go outside to grab the Highlander (we're presuming the repo already exists).
-    cd ..
-    git submodule add https://github.com/X2CommunityCore/X2WOTCCommunityHighlander.git
-
-    REM Now go back here for more convenient access to FART,
-    REM and reconfigure X2MBC to use our Git Highlander.
-    cd $ModSafeName$
-    replace_text.exe --c-style ..\.scripts\build.ps1 "# $builder.IncludeSrc("\""$srcDirectory" "$builder.IncludeSrc"("\""$srcDirectory"
-
-    REM Also configure the VSCode workspace!
-    replace_text.exe --c-style vscode.code-workspace.default "$HIGHLANDER" "{\""path\"": \"../X2WOTCCommunityHighlander/X2WOTCCommunityHighlander/Src\"}"
-    GOTO highlanderFinished
-)
-
-REM Option 2: From local Highlander folder
-IF "%1" == "FromPath" (
-    REM We'll take an extra argument for the path here, so let's shift all the indices up to keep it consistent.
-    SHIFT
-
-    REM Running FART in C-style mode screws with inserting file paths,
-    REM and I don't want to escape an arbitrary string inside a batch script.
-    REM Frankly, I'm tempted to try rewriting the whole thing in PowerShell
-    REM to avoid all this fiddling with FART and batch scripts...
-    replace_text.exe ..\.scripts\build.ps1 "# $builder.IncludeSrc(\"""C:\Users\Iridar\Documents\Firaxis ModBuddy\X2WOTCCommunityHighlander\X2WOTCCommunityHighlander\Src" "$builder.IncludeSrc"(\""%1"
-
-    REM Also configure the VSCode workspace!
-    replace_text.exe vscode.code-workspace.default "$HIGHLANDER" "{\""path\"": \"%1\"}"
-    GOTO highlanderFinished
-)
-
-REM Option 3: From local Highlander folder, via the X2EMPT_HIGHLANDER_FOLDER environment variable.
-IF "%1" == "FromEnvVar" (
-    replace_text.exe --c-style ..\.scripts\build.ps1 "# $builder.IncludeSrc($env" "$builder.IncludeSrc($env"
-    replace_text.exe --c-style vscode.code-workspace.default "$HIGHLANDER" "{\""path\"": \"%X2EMPT_HIGHLANDER_FOLDER%\"}"
-    GOTO highlanderFinished
-)
-
-REM Option 4 is just skipping the Highlander outright, so we only need to clean up the VSCode workspace.
-REM SETUP_ADVANCED.bat will pass "NoHighlander" because we're working with
-REM positional arguments and need *something*, but we don't actually care what we get here.
-replace_text.exe vscode.code-workspace.default --remove --c-style "$HIGHLANDER,\r\n"
-REM In case it's using LF line endings!
-replace_text.exe vscode.code-workspace.default --remove --c-style "$HIGHLANDER,\n"
-:highlanderFinished
-
-REM ********************************
-REM *** X2ProjectGenerator SETUP ***
-REM ********************************
-
-REM Option 1: Use X2ProjectGenerator
-IF "%2" == "UseX2PG" (
-    replace_text.exe --c-style ..\.scripts\build.ps1 "$useX2PG = $false" "$useX2PG = $true"
-)
-
-REM Option 2 is just skipping X2PG outright, so no scripting needed.
-REM As above, SETUP_ADVANCED.bat will pass "NoX2PG", but we don't actually care what we get.
-
-REM *********************
-REM *** COOKING SETUP ***
-REM *********************
-
-REM Option 1: Enable cooking
-IF "%3" == "EnableCooking" (
-    replace_text.exe --c-style ..\.scripts\build.ps1 "# $builder.SetContent" "$builder.SetContent"
-)
-
-REM Option 2 is just keeping cooking off, so no scripting needed.
-REM As above, SETUP_ADVANCED.bat will pass "NoCooking", but we don't really care.
-
-REM ************************
-REM *** CUSTOM SRC SETUP ***
-REM ************************
-
-IF NOT "%4" == "" (
-    :insertCustomSrc
-        REM As mentioned above, C-style screws with inserting file paths,
-        REM and I don't want to escape an arbitrary string inside a batch script.
-        REM So we'll run in regular mode, printing \\n to represent a linebreak,
-        REM then do a C-style postprocessing pass to turn it into a real linebreak.
-        REM
-        REM We're using \\n instead of \n because \n could legitimately occur
-        REM in the filesystem, but \\n should be illegal. I think.
-        replace_text.exe ..\.scripts\build.ps1 "# PLACEHOLDER_CUSTOMSRC" "$builder.IncludeSrc(\""%%path\"")\\n# PLACEHOLDER_CUSTOMSRC"
-        replace_text.exe --c-style ..\.scripts\build.ps1 \\\\n \n
-
-        replace_text.exe vscode.code-workspace.default "$DEPENDENCY" "{\""path\"": \"%1\"},\\n$DEPENDENCY"
-        replace_text.exe --c-style vscode.code-workspace.default \\\\n$DEPENDENCY \n\t\t$DEPENDENCY
-
-        REM We want to loop through all remaining arguments until we run out of paths.
-        SHIFT
-    IF NOT "%4" == "" GOTO insertCustomSrc
-)
-
-REM ***************
-REM *** CLEANUP ***
-REM ***************
-
-echo X2ModBuildCommon v1.2.1 successfully installed. > ReadMe.txt
+echo Welcome to the EMPT Advanced Setup! Let's just run through a few settings...
+echo You may close this setup at any time before completion if you change your mind
+echo about any of your chosen settings.
 echo.
-echo Edit .scripts\build.ps1 if you want to enable/disable cooking or building against Highlander. >> ReadMe.txt
-echo. >> ReadMe.txt
-echo Enjoy making your mod, and may the odds be ever in your favor. >> ReadMe.txt
-echo. >> ReadMe.txt
-echo. >> ReadMe.txt
-echo Created with Enhanced Mod Project Template v1.4 >> ReadMe.txt
-echo. >> ReadMe.txt
-echo Get news and updates here: >> ReadMe.txt
-echo https://github.com/Iridar/EnhancedModProjectTemplate >> ReadMe.txt
+SETLOCAL EnableDelayedExpansion
 
-REM Clean up PLACEHOLDER_CUSTOMSRC.
-replace_text.exe --remove --c-style ..\.scripts\build.ps1 "# PLACEHOLDER_CUSTOMSRC: Placeholder used by EMPT setup to automatically add custom source folders.\n"
+REM Set initial values so we can reliably navigate back from the commit screen.
+SET gitMode=
+SET highlanderMode=
+SET x2PGMode=
+SET cookingMode=
+SET customSrc=
+SET skipCustomSrc=
 
-REM Finalize VSCode workspace.
-replace_text.exe vscode.code-workspace.default --remove --c-style "$DEPENDENCY,\r\n"
-REM In case it's using LF line endings!
-replace_text.exe vscode.code-workspace.default --remove --c-style "$DEPENDENCY,\n"
-REM ... It's a line-by-line search, so the extra tabs need extra cleanup.
-replace_text.exe vscode.code-workspace.default --c-style "\t\t\t\t" "\t\t"
-REM So it turns out workspaces can't reference environment variables.
-REM Good thing we're already using FART, I guess...
-replace_text.exe vscode.code-workspace.default "$XCOM2SDKPATH$" "%XCOM2SDKPATH%"
-replace_text.exe vscode.code-workspace.default --c-style "\\" "/"
+REM ******************
+REM *** SDK SCREEN ***
+REM ******************
 
-REM Move VSCode workspace and the helper scripts where they belong.
-move vscode.code-workspace.default ../$ModSafeName$.code-workspace
-move build_default.bat ../build_default.bat
-move build_debug.bat ../build_debug.bat
-move build.bat ../build.bat
-move clean.bat ../clean.bat
+REM We may need to set up the SDK and game locations
+REM for the build automation to work.
+IF NOT EXIST "!XCOM2SDKPATH!\Development\SrcOrig" (
+    echo WARNING: Could not detect XCOM 2 WotC SDK^^!
+    echo A valid SDK path is required to run the build automation scripts,
+    echo and to correctly configure the VSCode workspace for IntelliSense.
+    echo It is highly recommended that you set the XCOM2SDKPATH environment variable
+    echo to a valid location before proceeding. This setup can set it for you, if you wish.
+    echo.
 
-REM Delete text editor.
-del replace_text.exe
+    :offerSdkSetup
+    SET setupSdk=
+    SET sdkPath=
+    SET /p "setupSdk=Do you wish to set up XCOM2SDKPATH? (Y/N) "
+    IF "!setupSdk!" == "Y" (
+        :sdkSetup
+        SET /p "sdkPath=Please specify the path to the XCOM 2 WotC SDK folder (typically '^<path to Steam^>\steamapps\common\XCOM 2 War of the Chosen SDK'): "
 
-REM Delete advanced setup file.
-del SETUP_ADVANCED.bat
+        IF NOT EXIST "!XCOM2SDKPATH!\Development\SrcOrig" (
+            echo ERROR: Could not detect XCOM 2 WotC SDK^^! Please double-check the path and try again^^!
+            GOTO sdkSetup
+        )
+        SETX XCOM2SDKPATH "!sdkPath!"
+        GOTO findGame
+    )
+    IF NOT "!setupSdk!" == "N" (
+        echo Sorry, that's not a valid option^^!
+        echo.
+        GOTO offerSdkSetup
+    )
+)
 
-REM If we're using Git, now is a good time to make an initial commit!
-cd ..
-git add **/* :!$ModSafeName$\SETUP.bat
-git commit -m "EMPT w/ Git: Initial commit"
-cd $ModSafeName$
+:findGame
+IF NOT EXIST "!XCOM2GAMEPATH!\Binaries\Win64\XCom2.exe" (
+    echo WARNING: Could not detect XCOM 2: War of the Chosen^^!
+    echo A valid WotC path is required to run the build automation scripts.
+    echo It is highly recommended that you set the XCOM2GAMEPATH environment variable
+    echo to a valid location before proceeding. This setup can set it for you, if you wish.
+    echo.
 
-REM Delete this batch file.
-REM This is a bit fancier than Iridar's original,
-REM because:
-REM - My use of SHIFT means %0 is no longer the path to the current script.
-REM - The original threw an error and I didn't like that.
-REM Source/explanation: https://stackoverflow.com/a/20333152
-(GOTO) 2>NUL & del SETUP.bat && echo Setup complete! && pause
+    :offerGameSetup
+    SET setupGame=
+    SET gamePath=
+    SET /p "setupGame=Do you wish to set up XCOM2GAMEPATH? (Y/N) "
+    IF "!setupGame!" == "Y" (
+        :gameSetup
+        SET /p "gamePath=Please specify the path to the XCOM 2: War of the Chosen folder (typically '^<path to Steam^>\steamapps\common\XCOM 2\XCom2-WarOfTheChosen'): "
+
+        IF NOT EXIST "!XCOM2GAMEPATH!\Binaries\Win64\XCom2.exe" (
+            echo ERROR: Could not detect XCOM 2: War of the Chosen^^! Please double-check the path and try again^^!
+            GOTO gameSetup
+        )
+        SETX XCOM2GAMEPATH "!gamePath!"
+        GOTO gitSetup
+    )
+    IF NOT "!setupGame!" == "N" (
+        echo Sorry, that's not a valid option^^!
+        echo.
+        GOTO offerGameSetup
+    )
+)
+
+
+
+REM ******************
+REM *** GIT SCREEN ***
+REM ******************
+
+:gitSetup
+echo Do you want to use Git for version control? (You need to have installed it before, or this won't do anything...)
+echo   1. Yes, I want to use Git.
+echo   2. No, I don't want to use Git right now.
+SET /p "gitMode=Please enter the number corresponding to your preferred option: "
+
+IF "!gitMode!" == "1" (
+    SET gitMode=UseGit
+    GOTO gitFinished
+) 
+IF "!gitMode!" == "2" (
+    SET gitMode=NoGit
+    GOTO gitFinished
+)
+echo Sorry, that's not a valid option^^!
+echo.
+SET gitMode=
+GOTO gitSetup
+
+:gitFinished
+echo.
+echo Git mode has been set to "!gitMode!"^^! (1/5)
+echo Moving on to the meaty bits...
+echo.
+
+REM *************************
+REM *** HIGHLANDER SCREEN ***
+REM *************************
+
+:highlanderSetup
+echo How do you want to build against the Community Highlander?
+echo   1. Get the Highlander from GitHub. (This will forcibly enable Git mode^^!)
+echo   2. Use a local copy of the Highlander from a project-specific path...
+echo   3. Use a local copy of the Highlander from a global path...
+echo   4. I don't want to build against the Highlander right now.
+SET /p "highlanderMode=Please enter the number corresponding to your preferred option: "
+
+IF "!highlanderMode!" == "1" (
+    SET gitMode=UseGit
+    SET highlanderMode=FromGit
+    GOTO highlanderFinished
+) 
+IF "!highlanderMode!" == "2" (
+    :highlanderPathSetup
+    SET highlanderPath=
+    SET /p "highlanderPath=Now, please specify the path to the Highlander's Src folder (e.g. C:\Users\Iridar\Documents\Firaxis ModBuddy\X2WOTCCommunityHighlander\X2WOTCCommunityHighlander\Src): "
+    IF NOT EXIST "!highlanderPath!\X2WOTCCommunityHighlander\Classes" (
+        echo ERROR: Could not detect Highlander source code^^! Please double-check the path and try again^^!
+        GOTO highlanderPathSetup
+    )
+    SET highlanderMode=FromPath "!highlanderPath!"
+    GOTO highlanderFinished
+) 
+IF "!highlanderMode!" == "3" (
+    IF NOT EXIST "!X2EMPT_HIGHLANDER_FOLDER!\X2WOTCCommunityHighlander\Classes" (
+        echo WARNING: Could not detect Highlander source code^^!
+        echo It is highly recommended that you set the X2EMPT_HIGHLANDER_FOLDER environment variable
+        echo to a valid location before proceeding. This setup can set it for you, if you wish.
+        echo.
+
+        :offerEnvSetup
+        SET setupEnv=
+        SET highlanderPath=
+        SET /p "setupEnv=Do you wish to set up X2EMPT_HIGHLANDER_FOLDER? (Y/N) "
+        IF "!setupEnv!" == "Y" (
+            :highlanderEnvSetup
+            SET /p "highlanderPath=Please specify the path to the Highlander's Src folder (e.g. C:\Users\Iridar\Documents\Firaxis ModBuddy\X2WOTCCommunityHighlander\X2WOTCCommunityHighlander\Src): "
+
+            IF NOT EXIST "!highlanderPath!\X2WOTCCommunityHighlander\Classes" (
+                echo ERROR: Could not detect Highlander source code^^! Please double-check the path and try again^^!
+                GOTO highlanderEnvSetup
+            )
+            SETX X2EMPT_HIGHLANDER_FOLDER "!highlanderPath!"
+            GOTO highlanderEnvFinished
+        )
+        IF NOT "!setupEnv!" == "N" (
+            echo Sorry, that's not a valid option^^!
+            echo.
+            GOTO offerEnvSetup
+        )
+    )
+
+    :highlanderEnvFinished
+    SET highlanderMode=FromEnvVar
+    GOTO highlanderFinished
+)
+IF "!highlanderMode!" == "4" (
+    SET highlanderMode=NoHighlander
+    GOTO highlanderFinished
+)
+
+echo Sorry, that's not a valid option^^!
+echo.
+SET highlanderMode=
+GOTO highlanderSetup
+
+:highlanderFinished
+echo.
+echo Highlander mode has been set to "!highlanderMode!"^^! (2/5)
+echo Moving on...
+echo.
+
+REM *********************************
+REM *** X2ProjectGenerator SCREEN ***
+REM *********************************
+
+:x2PGSetup
+IF NOT "!x2PGMode!" == "" GOTO cookingSetup
+echo Do you want to use Xymanek's X2ProjectGenerator
+echo to automatically verify your project before compiling?
+echo.
+echo Note that even if enabled, X2PG will not do anything until you add
+echo X2ProjectGenerator.exe to your PATH.
+echo   1. Yes, please enable automatic verification.
+echo   2. No, I don't want to enable automatic verification right now.
+SET /p "x2PGMode=Please enter the number corresponding to your preferred option: "
+
+IF "!x2PGMode!" == "1" (
+    SET x2PGMode=UseX2PG
+    GOTO x2PGFinished
+) 
+IF "!x2PGMode!" == "2" (
+    SET x2PGMode=NoX2PG
+    GOTO x2PGFinished
+)
+echo Sorry, that's not a valid option^^!
+echo.
+SET x2PGMode=
+GOTO x2PGSetup
+
+:x2PGFinished
+echo.
+echo X2PG mode has been set to "!x2PGMode!"^^! (2/4)
+echo Next up...
+echo.
+
+REM **********************
+REM *** COOKING SCREEN ***
+REM **********************
+
+:cookingSetup
+IF NOT "!cookingMode!" == "" GOTO customSrcSetup
+echo Do you want to enable cooking? If you're not 100%% sure when you need to do this,
+echo that's alright: The author of this setup isn't sure yet, either. :^(
+echo   1. Yes, please enable cooking.
+echo   2. No, I don't think this project benefits from cooking.
+SET /p "cookingMode=Please enter the number corresponding to your preferred option: "
+
+IF "!cookingMode!" == "1" (
+    SET cookingMode=EnableCooking
+    GOTO cookingFinished
+)
+IF "!cookingMode!" == "2" (
+    SET cookingMode=NoCooking
+    GOTO cookingFinished
+)
+echo Sorry, that's not a valid option^^!
+echo.
+SET cookingMode=
+GOTO cookingSetup
+
+:cookingFinished
+echo.
+echo Cooking mode has been set to "!cookingMode!"^^! (4/5)
+echo Almost there...
+echo.
+
+REM *************************
+REM *** CUSTOM SRC SCREEN ***
+REM *************************
+
+:customSrcSetup
+REM Since this one keeps iteratively adding to customSrc, we need a separate flag
+REM to tell us we came here from the commit screen.
+IF !skipCustomSrc! == TRUE GOTO commitScreen
+SET moreSrc=
+SET /p "moreSrc=Are there any other mods you want to build against? (Y/N) "
+IF "!moreSrc!" == "Y" (
+    echo Okay^^! We can do this folder-by-folder, or as a space-delimited list of folders.
+    echo Remember to target the mods' Src folders^^! This setup isn't smart enough
+    echo to do it for you.
+    SET /p "moreSrc=Please specify the path(s) to the mod(s) you wish to build against: "
+    IF NOT "!customSrc!" == "" SET customSrc=!customSrc! !moreSrc!
+    IF "!customSrc!" == "" SET customSrc=!moreSrc!
+    echo.
+    echo Dependency registered^^! Current dependencies: !customSrc!
+    echo.
+    GOTO customSrcSetup
+) 
+IF NOT "!moreSrc!" == "N" (
+    echo Sorry, that's not a valid option^^!
+    echo.
+    GOTO customSrcSetup
+)
+
+SET skipCustomSrc=TRUE
+echo.
+echo Finished registering dependencies^^! (5/5)
+echo Setup is ready to do its thing^^!
+echo.
+
+REM *********************
+REM *** COMMIT SCREEN ***
+REM *********************
+
+:commitScreen
+SET commit=
+echo Here's the final config, for verification:
+echo 1. Is using Git: !gitMode!
+echo 2. Highlander source: !highlanderMode!
+echo 3. Automatic validation: !x2PGMode!
+echo 4. Is using cooking: !cookingMode!
+echo 5. Dependency paths: !customSrc!
+echo.
+SET /p "commit=Does that look okay? Enter a number 1-5 to return to its corresponding step, or 6 to finish setup: "
+
+IF "!commit!" == "1" (
+    IF "!highlanderMode!" == "FromGit" (
+        echo Sorry, can't disable Git if you're using it to build against the Highlander^^!
+        echo.
+        GOTO commitScreen
+    )
+    echo Returning to Git config now^^!
+    echo.
+    SET gitMode=
+    GOTO gitSetup
+)
+IF "!commit!" == "2" (
+    echo Okay, returning to Highlander config^^!
+    echo.
+    SET highlanderMode=
+    GOTO highlanderSetup
+) 
+IF "!commit!" == "3" (
+    echo Got it, returning to X2PG config^^!
+    echo.
+    SET x2PGMode=
+    GOTO x2PGSetup
+) 
+IF "!commit!" == "4" (
+    echo Going back to cooking config now^^!
+    echo.
+    SET cookingMode=
+    GOTO cookingSetup
+) 
+IF "!commit!" == "5" (
+    echo Ouch. Going back to dependency config... hopefully not for long...
+    echo.
+    SET skipCustomSrc=
+    SET customSrc=
+    GOTO customSrcSetup
+) 
+IF "!commit!" == "6" (
+    GOTO runSetup
+)
+echo Sorry, that's not a valid option^^!
+echo.
+GOTO commitScreen
+
+:runSetup
+echo Beginning project setup^^! Do not close this window...
+echo.
+IF "!gitMode!" == "UseGit" (
+    cd ..
+    git init
+    cd $ModSafeName$
+)
+
+SETUP_LEGACY.bat !highlanderMode! !x2PGMode! !cookingMode! !customSrc!

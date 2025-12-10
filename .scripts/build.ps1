@@ -48,7 +48,7 @@ $builder = [BuildProject]::new("$ModSafeName$", $srcDirectory, $sdkPath, $gamePa
 # Uncomment to use additional global Custom Src to build against.
 # $builder.IncludeSrc("C:\Users\Iridar\Documents\Firaxis ModBuddy\CustomSrc")
 
-# PLACEHOLDER_CUSTOMSRC: Used by SETUP_ADVANCED.bat to configure custom source folders.
+# PLACEHOLDER_CUSTOMSRC: Used by SETUP.bat to configure custom source folders.
 
 switch ($config)
 {
